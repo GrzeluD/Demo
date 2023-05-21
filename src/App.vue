@@ -5,7 +5,7 @@
 
 <script>
 import HelloWorld from './components/HelloWorld.vue'
-
+// console.log(process.env.GOOGLE_VISION_API_KEY)
 export default {
   name: 'App',
   components: {
