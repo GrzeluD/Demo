@@ -1,26 +1,61 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <input type="file" ref="fileInput" @change="handleFileChange">
+    <button @click="analyzeImage">Analizuj obraz</button>
+
+    <ul>
+      <li v-for="label in labels" :key="label">{{ label }}</li>
+    </ul>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-// console.log(process.env.GOOGLE_VISION_API_KEY)
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
-</script>
+import axios from 'axios';
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+export default {
+  data() {
+    return {
+      imageData: null,
+      labels: []
+    };
+  },
+  methods: {
+    handleFileChange(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        this.imageData = event.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    },
+    async analyzeImage() {
+      try {
+        const response = await axios.post(
+            `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
+            {
+              requests: [
+                {
+                  image: {
+                    content: this.imageData.substring(this.imageData.indexOf(',') + 1)
+                  },
+                  features: [
+                    {
+                      type: 'LABEL_DETECTION',
+                      maxResults: 5
+                    }
+                  ]
+                }
+              ]
+            }
+        );
+
+        this.labels = response.data.responses[0].labelAnnotations.map(label => label.description);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+};
+</script>
